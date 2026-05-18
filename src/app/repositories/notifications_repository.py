@@ -15,16 +15,16 @@ class NotificationsRepository:
         docs = await cursor.to_list(length=limit)
         return [self._map_doc(doc) for doc in docs]
 
-    async def get_by_id(self, notification_id: str) -> Dict[str, Any]:
-        doc = await self._collection.find_one({"employeeId": notification_id})
-        if doc is None:
+    async def get_by_id(self, notification_id: str) -> List[Dict[str, Any]]:
+        docs = await self._collection.find({"employeeId": notification_id}).to_list(length=100)
+        if not docs:
             raise APIError(
                 "Notification not found",
                 status_code=404,
                 code="not_found",
                 details={"employeeId": notification_id},
             )
-        return self._map_doc(doc)
+        return [self._map_doc(doc) for doc in docs]
 
     async def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
         result = await self._collection.insert_one(dict(data))

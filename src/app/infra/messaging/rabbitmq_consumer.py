@@ -9,8 +9,10 @@ import aio_pika
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.schemas.notification import NotificationCreated, NotificationDeleted, NotificationKind
+from app.schemas.notification import NotificationCreated, NotificationDeleted, NotificationKind, NotificationSecurity, NotificationRecover
 from app.services.notifications_service import NotificationsService
+from app.schemas.email_schema import EmailPayload
+from app.infra.email.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -76,12 +78,22 @@ async def start_rabbitmq_consumer() -> None:
                     if event_type == "EMPLOYEE_CREATED":
                         kind = NotificationKind.BIENVENIDA
                         event = NotificationCreated.model_validate(data)
+                        
                         logger.info(
                             "[NOTIFICACIÓN] Tipo: %s | Para %s  | Mensaje:  Bienvenido/a %s",
                             event_type,
                             data.get("email"),
                             data.get("name"),
                         )
+                        
+                        # Enviar email
+                        email_payload = EmailPayload(
+                            to_email=data.get("email"),
+                            subject="Bienvenido@",
+                            body=f"Bienvenid@ {data.get('name')} a nuestra plataforma, recibira un correo con las instrucciones para activar su cuenta."
+                        )
+                        EmailService.send_email(email_payload.to_email, email_payload.subject, email_payload.body)
+                        
                     elif event_type == "EMPLOYEE_DELETED":
                         kind = NotificationKind.DESVINCULACION
                         event = NotificationDeleted.model_validate(data)
@@ -91,6 +103,47 @@ async def start_rabbitmq_consumer() -> None:
                             data.get("email"),
                             data.get("name"),
                         )
+                        # Enviar email
+                        email_payload = EmailPayload(
+                            to_email=data.get("email"),
+                            subject="Cuenta deshabilitada",
+                            body=f"Hola {data.get('name')}, su cuenta ha sido deshabilitada"
+                        )
+                        EmailService.send_email(email_payload.to_email, email_payload.subject, email_payload.body)
+
+                    elif event_type == "USER_CREATED":
+                        kind = NotificationKind.SEGURIDAD
+                        event = NotificationSecurity.model_validate(data)
+                        logger.info(
+                            "[NOTIFICACIÓN] Tipo: %s | Para %s  | Mensaje:  Para restablecer o recuperar su contraseña, utilice el siguiente token de seguridad: %s",
+                            event_type,
+                            data.get("email"),
+                            data.get("token"),
+                        )
+                        # Enviar email
+                        email_payload = EmailPayload(
+                            to_email=data.get("email"),
+                            subject="Activar cuenta",
+                            body=f"Para restablecer o recuperar su contraseña, utilice el siguiente token de seguridad: {data.get('token')}"
+                        )
+                        EmailService.send_email(email_payload.to_email, email_payload.subject, email_payload.body)
+
+                    elif event_type == "USER_RECOVER":
+                        kind = NotificationKind.SEGURIDAD
+                        event = NotificationRecover.model_validate(data)
+                        logger.info(
+                            "[NOTIFICACIÓN] Tipo: %s | Para %s  | Mensaje:  Para restablecer o recuperar su contraseña, utilice el siguiente token de seguridad: %s",
+                            event_type,
+                            data.get("email"),
+                            data.get("token"),
+                        )
+                        # Enviar email
+                        email_payload = EmailPayload(
+                            to_email=data.get("email"),
+                            subject="Recuperar contraseña",
+                            body=f"Para restablecer o recuperar su contraseña, utilice el siguiente token de seguridad: {data.get('token')}"
+                        )
+                        EmailService.send_email(email_payload.to_email, email_payload.subject, email_payload.body)
                     else:
                         logger.warning(f"Unknown eventType: {event_type}")
                         return

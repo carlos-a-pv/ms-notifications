@@ -14,7 +14,7 @@ async def get_notifications() -> List[NotificationOut]:
     return await service.list_notifications()
 
 
-@router.get("/{id}", response_model=NotificationOut)
-async def get_notification_by_id(id: str) -> NotificationOut:
+@router.get("/{id}", response_model=List[NotificationOut])
+async def get_notification_by_id(id: str) -> List[NotificationOut]:
     service = NotificationsService()
     return await service.get_notification_by_id(id)

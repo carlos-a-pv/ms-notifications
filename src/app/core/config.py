@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     
     rabbitmq_onboarding_queue: str = "notification.onboarding.queue"
 
+    SMTP_HOST: str = "mailhog"
+    SMTP_PORT: int = 1025
+
     # rabbitmq_offboarding_queue: str = "notification.offboarding.queue"
 
     model_config = SettingsConfigDict(env_prefix="", env_file=".env", extra="ignore")

@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class NotificationKind(str, Enum):
     BIENVENIDA = "BIENVENIDA"
     DESVINCULACION = "DESVINCULACION"
+    SEGURIDAD = "SEGURIDAD"
 
 
 class NotificationOut(BaseModel):
@@ -30,5 +31,17 @@ class NotificationDeleted(BaseModel):
     id: int
     name: str
     email: str
+
+class NotificationSecurity(BaseModel):
+    id: int
+    email: str
+    token: str
+    
+class NotificationRecover(BaseModel):
+    id: int
+    email: str
+    token: str
+    
+
 
 

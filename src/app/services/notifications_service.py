@@ -2,7 +2,13 @@ from datetime import datetime, timezone
 from typing import List
 
 from app.repositories.notifications_repository import NotificationsRepository
-from app.schemas.notification import NotificationCreated, NotificationDeleted, NotificationKind, NotificationOut
+from app.schemas.notification import (
+    NotificationCreated,
+    NotificationDeleted,
+    NotificationKind,
+    NotificationOut,
+    NotificationSecurity,
+)
 
 
 class NotificationsService:
@@ -13,16 +19,18 @@ class NotificationsService:
         items = await self._repo.list_notifications()
         return [NotificationOut(**item) for item in items]
 
-    async def get_notification_by_id(self, notification_id: str) -> NotificationOut:
-        item = await self._repo.get_by_id(notification_id)
-        return NotificationOut(**item)
+    async def get_notification_by_id(self, notification_id: str) -> List[NotificationOut]:
+        items = await self._repo.get_by_id(notification_id)
+        return [NotificationOut(**item) for item in items]
 
     async def create_from_employee_event(
-        self, event: NotificationCreated | NotificationDeleted, *, kind: NotificationKind
+        self, event: NotificationCreated | NotificationDeleted | NotificationSecurity, *, kind: NotificationKind
     ) -> None:
         now = datetime.now(timezone.utc)
         if kind == NotificationKind.BIENVENIDA:
             message = f"Bienvenido/a {event.name}"
+        elif kind == NotificationKind.SEGURIDAD:
+            message = f"Para restablecer o recuperar su contraseña, utilice el siguiente token de seguridad: {event.token}"
         else:
             message = f"El empleado {event.name} ha sido desvinculado"
 
@@ -31,8 +39,8 @@ class NotificationsService:
             "recipient": event.email,
             "message": message,
             "date_sent": now,
-            "employeeId": str(event.id),
-            "employeeName": event.name,
+            "employeeId": str(event.id)
+            #"employeeName": event.name,
         }
 
         await self._repo.create(doc)
